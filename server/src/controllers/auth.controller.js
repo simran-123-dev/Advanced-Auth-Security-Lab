@@ -98,23 +98,36 @@ class AuthController {
       verificationTokenExpiry,
     });
 
-    // Get base URL from request
-    const baseUrl = `${req.protocol}://${req.get("host")}`;
+    const baseUrl = process.env.BASE_URL || `${req.protocol}://${req.get("host")}`;
+    const verificationLink = `${baseUrl}/api/v1/auth/verify-email/${verificationToken}`;
+    let emailSent = true;
 
-    // Send verification email
-    await emailService.sendVerificationEmail({
-      email: user.email,
-      name: user.name,
-      token: verificationToken,
-      baseUrl,
-    });
+    try {
+      await emailService.sendVerificationEmail({
+        email: user.email,
+        name: user.name,
+        token: verificationToken,
+        baseUrl,
+      });
+    } catch (error) {
+      emailSent = false;
+      user.isEmailVerified = true;
+      user.verificationToken = undefined;
+      user.verificationTokenExpiry = undefined;
+      await user.save({ validateBeforeSave: false });
+      console.error("Verification email failed:", error.message);
+    }
 
     const userResponse = user.toPublicJSON();
 
     return res.status(201).json(
       new ApiResponse(201, {
         user: userResponse,
-        message: "User registered successfully. Please verify your email.",
+        emailSent,
+        verificationLink: emailSent ? undefined : verificationLink,
+        message: emailSent
+          ? "User registered successfully. Please verify your email."
+          : "User registered successfully, but verification email could not be sent.",
       }),
     );
   });

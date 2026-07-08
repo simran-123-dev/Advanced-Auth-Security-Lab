@@ -125,7 +125,11 @@ export const AuthProvider = ({ children }) => {
   const register = async (userData) => {
     try {
       const response = await axios.post(`${API_URL}/auth/register`, userData)
-      toast.success('Account created! Please verify your email.')
+      if (response.data?.data?.emailSent === false) {
+        toast.success('Account created. Email service is unavailable right now.')
+      } else {
+        toast.success('Account created! Please verify your email.')
+      }
       return { success: true, data: response.data.data }
     } catch (error) {
       const message = error.response?.data?.message || 'Registration failed'
