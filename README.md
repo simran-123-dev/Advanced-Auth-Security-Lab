@@ -380,7 +380,7 @@ https://github.com/simran-123-dev
 
 LinkedIn
 
-(Add Your LinkedIn)
+(https://www.linkedin.com/in/simranjeet-kaur-827a18325/)
 
 ---
 
