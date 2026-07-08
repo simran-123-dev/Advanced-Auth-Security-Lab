@@ -1,3 +1,5 @@
+// server/src/app.js
+
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
@@ -33,15 +35,19 @@ const authLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+// ✅ Session with production settings
+const isProduction = process.env.NODE_ENV === "production";
 app.use(
   session({
     secret: process.env.SESSION_SECRET || "your-session-secret-key",
     resave: false,
     saveUninitialized: false,
     cookie: {
-      secure: process.env.NODE_ENV === "production",
+      secure: isProduction,
       httpOnly: true,
+      sameSite: isProduction ? "none" : "lax",
       maxAge: 24 * 60 * 60 * 1000,
+      domain: isProduction ? process.env.COOKIE_DOMAIN : undefined,
     },
   })
 );
@@ -60,6 +66,7 @@ app.use(
   })
 );
 
+// ✅ CORS with production settings
 app.use(
   cors({
     origin: process.env.CLIENT_URL || "http://localhost:5173",

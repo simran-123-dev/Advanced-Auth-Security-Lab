@@ -120,10 +120,6 @@ class AuthController {
    * Login user
    * @route POST /api/v1/auth/login
    */
-  /**
-   * Login user
-   * @route POST /api/v1/auth/login
-   */
   login = asyncHandler(async (req, res) => {
     const { email, password } = req.body;
 
@@ -208,7 +204,6 @@ class AuthController {
     user.refreshToken = refreshToken;
     await user.save({ validateBeforeSave: false });
 
-    // ✅ FIXED: Removed location: {} from session
     const session = await Session.create({
       userId: user._id,
       refreshToken: refreshToken,
@@ -222,10 +217,13 @@ class AuthController {
       expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
     });
 
+    // ✅ FIXED: Cookie options for production
+    const isProduction = process.env.NODE_ENV === "production";
     const cookieOptions = {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      secure: isProduction,
+      sameSite: isProduction ? "none" : "lax",
+      domain: isProduction ? process.env.COOKIE_DOMAIN : undefined,
     };
 
     res.cookie("accessToken", accessToken, {
@@ -263,6 +261,7 @@ class AuthController {
       }),
     );
   });
+
   /**
    * Logout user
    * @route POST /api/v1/auth/logout
@@ -292,17 +291,17 @@ class AuthController {
       });
     }
 
-    res.clearCookie("accessToken", {
+    // ✅ FIXED: Clear cookies with production settings
+    const isProduction = process.env.NODE_ENV === "production";
+    const cookieOptions = {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-    });
+      secure: isProduction,
+      sameSite: isProduction ? "none" : "lax",
+      domain: isProduction ? process.env.COOKIE_DOMAIN : undefined,
+    };
 
-    res.clearCookie("refreshToken", {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-    });
+    res.clearCookie("accessToken", cookieOptions);
+    res.clearCookie("refreshToken", cookieOptions);
 
     return res
       .status(200)
@@ -343,10 +342,16 @@ class AuthController {
 
     const newAccessToken = generateAccessToken(user._id, user.email, user.role);
 
-    res.cookie("accessToken", newAccessToken, {
+    const isProduction = process.env.NODE_ENV === "production";
+    const cookieOptions = {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      secure: isProduction,
+      sameSite: isProduction ? "none" : "lax",
+      domain: isProduction ? process.env.COOKIE_DOMAIN : undefined,
+    };
+
+    res.cookie("accessToken", newAccessToken, {
+      ...cookieOptions,
       maxAge: 15 * 60 * 1000,
     });
 

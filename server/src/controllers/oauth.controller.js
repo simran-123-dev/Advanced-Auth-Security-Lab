@@ -72,10 +72,12 @@ class OAuthController {
           status: "SUCCESS",
         });
 
+        const isProduction = process.env.NODE_ENV === "production";
         const cookieOptions = {
           httpOnly: true,
-          secure: process.env.NODE_ENV === "production",
-          sameSite: "lax",
+          secure: isProduction,
+          sameSite: isProduction ? "none" : "lax",
+          domain: isProduction ? process.env.COOKIE_DOMAIN : undefined,
         };
 
         res.cookie("accessToken", accessToken, {
@@ -148,10 +150,12 @@ class OAuthController {
           status: "SUCCESS",
         });
 
+        const isProduction = process.env.NODE_ENV === "production";
         const cookieOptions = {
           httpOnly: true,
-          secure: process.env.NODE_ENV === "production",
-          sameSite: "lax",
+          secure: isProduction,
+          sameSite: isProduction ? "none" : "lax",
+          domain: isProduction ? process.env.COOKIE_DOMAIN : undefined,
         };
 
         res.cookie("accessToken", accessToken, {
@@ -176,29 +180,45 @@ class OAuthController {
    * @route POST /api/v1/auth/2fa/setup
    */
   setup2FA = asyncHandler(async (req, res) => {
-    const userId = req.user.id;
+    try {
+      const userId = req.user.id;
 
-    const user = await User.findById(userId);
-    if (!user) {
-      throw new ApiError(404, "User not found");
+      const user = await User.findById(userId);
+      if (!user) {
+        throw new ApiError(404, "User not found");
+      }
+
+      // Generate secret
+      const secret = speakeasy.generateSecret({
+        name: `AuthLab:${user.email}`,
+        length: 20,
+        issuer: "AuthLab",
+      });
+
+      // ✅ Generate QR code with proper options
+      const qrCodeUrl = await QRCode.toDataURL(secret.otpauth_url, {
+        width: 300,
+        margin: 2,
+        color: {
+          dark: '#2563eb',
+          light: '#ffffff',
+        },
+      });
+
+      // Store secret temporarily in session
+      req.session.temp2FASecret = secret.base32;
+
+      return res.status(200).json(
+        new ApiResponse(200, {
+          secret: secret.base32,
+          qrCode: qrCodeUrl,
+          otpauthUrl: secret.otpauth_url,
+        })
+      );
+    } catch (error) {
+      console.error("2FA Setup Error:", error);
+      throw new ApiError(500, "Failed to generate 2FA QR code: " + error.message);
     }
-
-    const secret = speakeasy.generateSecret({
-      name: `AuthLab:${user.email}`,
-      length: 20,
-    });
-
-    const qrCodeUrl = await QRCode.toDataURL(secret.otpauth_url);
-
-    req.session.temp2FASecret = secret.base32;
-
-    return res.status(200).json(
-      new ApiResponse(200, {
-        secret: secret.base32,
-        qrCode: qrCodeUrl,
-        otpauthUrl: secret.otpauth_url,
-      })
-    );
   });
 
   /**
@@ -361,10 +381,12 @@ class OAuthController {
       expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
     });
 
+    const isProduction = process.env.NODE_ENV === "production";
     const cookieOptions = {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      secure: isProduction,
+      sameSite: isProduction ? "none" : "strict",
+      domain: isProduction ? process.env.COOKIE_DOMAIN : undefined,
     };
 
     res.cookie("accessToken", accessToken, {
