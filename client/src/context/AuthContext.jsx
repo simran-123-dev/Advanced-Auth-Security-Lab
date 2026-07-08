@@ -166,9 +166,9 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
-  const verify2FA = async (token) => {
+  const verify2FA = async (token, setupToken) => {
     try {
-      await axios.post(`${API_URL}/auth/2fa/verify`, { token })
+      await axios.post(`${API_URL}/auth/2fa/verify`, { token, setupToken })
       await checkAuth()
       toast.success('2FA enabled successfully')
       return { success: true }

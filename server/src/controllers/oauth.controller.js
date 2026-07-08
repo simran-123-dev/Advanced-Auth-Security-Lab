@@ -77,7 +77,6 @@ class OAuthController {
           httpOnly: true,
           secure: isProduction,
           sameSite: isProduction ? "none" : "lax",
-          domain: isProduction ? process.env.COOKIE_DOMAIN : undefined,
         };
 
         res.cookie("accessToken", accessToken, {
@@ -155,7 +154,6 @@ class OAuthController {
           httpOnly: true,
           secure: isProduction,
           sameSite: isProduction ? "none" : "lax",
-          domain: isProduction ? process.env.COOKIE_DOMAIN : undefined,
         };
 
         res.cookie("accessToken", accessToken, {
@@ -205,14 +203,22 @@ class OAuthController {
         },
       });
 
-      // Store secret temporarily in session
-      req.session.temp2FASecret = secret.base32;
+      const setupToken = jwt.sign(
+        {
+          userId: user._id.toString(),
+          secret: secret.base32,
+          purpose: "2fa_setup",
+        },
+        process.env.ACCESS_TOKEN_SECRET,
+        { expiresIn: "10m" }
+      );
 
       return res.status(200).json(
         new ApiResponse(200, {
           secret: secret.base32,
           qrCode: qrCodeUrl,
           otpauthUrl: secret.otpauth_url,
+          setupToken,
         })
       );
     } catch (error) {
@@ -226,11 +232,15 @@ class OAuthController {
    * @route POST /api/v1/auth/2fa/verify
    */
   verify2FA = asyncHandler(async (req, res) => {
-    const { token } = req.body;
+    const { token, setupToken } = req.body;
     const userId = req.user.id;
 
     if (!token) {
       throw new ApiError(400, "2FA token is required");
+    }
+
+    if (!setupToken) {
+      throw new ApiError(400, "2FA setup token is required");
     }
 
     const user = await User.findById(userId);
@@ -238,13 +248,23 @@ class OAuthController {
       throw new ApiError(404, "User not found");
     }
 
-    const tempSecret = req.session.temp2FASecret;
-    if (!tempSecret) {
-      throw new ApiError(400, "2FA setup not initialized");
+    let decodedSetup;
+    try {
+      decodedSetup = jwt.verify(setupToken, process.env.ACCESS_TOKEN_SECRET);
+    } catch (error) {
+      throw new ApiError(400, "2FA setup has expired. Please start again.");
+    }
+
+    if (
+      decodedSetup.purpose !== "2fa_setup" ||
+      decodedSetup.userId !== userId.toString() ||
+      !decodedSetup.secret
+    ) {
+      throw new ApiError(400, "Invalid 2FA setup token");
     }
 
     const verified = speakeasy.totp.verify({
-      secret: tempSecret,
+      secret: decodedSetup.secret,
       encoding: "base32",
       token: token,
       window: 1,
@@ -254,11 +274,9 @@ class OAuthController {
       throw new ApiError(400, "Invalid 2FA token");
     }
 
-    user.twoFactorSecret = tempSecret;
+    user.twoFactorSecret = decodedSetup.secret;
     user.isTwoFactorEnabled = true;
     await user.save({ validateBeforeSave: false });
-
-    delete req.session.temp2FASecret;
 
     await AuditLog.create({
       userId: user._id,
@@ -386,7 +404,6 @@ class OAuthController {
       httpOnly: true,
       secure: isProduction,
       sameSite: isProduction ? "none" : "strict",
-      domain: isProduction ? process.env.COOKIE_DOMAIN : undefined,
     };
 
     res.cookie("accessToken", accessToken, {

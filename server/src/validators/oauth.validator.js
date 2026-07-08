@@ -16,6 +16,7 @@ const otpSchema = z.object({
 const twoFaVerifySchema = z.object({
   token: z.string().length(6, "2FA token must be 6 digits"),
   tempAccessToken: z.string().optional(),
+  setupToken: z.string().optional(),
 });
 
 export {

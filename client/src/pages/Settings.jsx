@@ -127,7 +127,7 @@ const Settings = () => {
     setTwoFactorLoading(true)
     const result = user?.isTwoFactorEnabled
       ? await disable2FA(twoFactorCode)
-      : await verify2FA(twoFactorCode)
+      : await verify2FA(twoFactorCode, twoFactorSetup?.setupToken)
     setTwoFactorLoading(false)
 
     if (result.success) {

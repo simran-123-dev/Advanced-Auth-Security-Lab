@@ -223,7 +223,6 @@ class AuthController {
       httpOnly: true,
       secure: isProduction,
       sameSite: isProduction ? "none" : "lax",
-      domain: isProduction ? process.env.COOKIE_DOMAIN : undefined,
     };
 
     res.cookie("accessToken", accessToken, {
@@ -297,7 +296,6 @@ class AuthController {
       httpOnly: true,
       secure: isProduction,
       sameSite: isProduction ? "none" : "lax",
-      domain: isProduction ? process.env.COOKIE_DOMAIN : undefined,
     };
 
     res.clearCookie("accessToken", cookieOptions);
@@ -347,7 +345,6 @@ class AuthController {
       httpOnly: true,
       secure: isProduction,
       sameSite: isProduction ? "none" : "lax",
-      domain: isProduction ? process.env.COOKIE_DOMAIN : undefined,
     };
 
     res.cookie("accessToken", newAccessToken, {

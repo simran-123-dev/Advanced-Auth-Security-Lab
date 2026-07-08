@@ -57,7 +57,6 @@ router.post(
  */
 router.post(
   "/logout",
-  verifyJWT,
   authController.logout
 );
 
