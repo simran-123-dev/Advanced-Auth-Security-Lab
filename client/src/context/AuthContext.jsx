@@ -40,13 +40,18 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await axios.get(`${API_URL}/auth/check`)
       if (response.data?.data?.user) {
+        if (response.data.data.accessToken) {
+          setAuthHeader(response.data.data.accessToken)
+        }
         setUser(response.data.data.user)
         setIsAuthenticated(true)
       } else {
+        setAuthHeader(null)
         setUser(null)
         setIsAuthenticated(false)
       }
     } catch (error) {
+      setAuthHeader(null)
       setUser(null)
       setIsAuthenticated(false)
     } finally {

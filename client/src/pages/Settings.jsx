@@ -42,6 +42,7 @@ const Settings = () => {
   const [twoFactorSetup, setTwoFactorSetup] = useState(null)
   const [twoFactorCode, setTwoFactorCode] = useState('')
   const [twoFactorLoading, setTwoFactorLoading] = useState(false)
+  const [twoFactorError, setTwoFactorError] = useState('')
   const [activeTab, setActiveTab] = useState('security')
   const [notificationPrefs, setNotificationPrefs] = useState({
     email: true,
@@ -110,6 +111,7 @@ const Settings = () => {
   const open2FA = async () => {
     setTwoFactorCode('')
     setTwoFactorSetup(null)
+    setTwoFactorError('')
     setTwoFactorModal(true)
 
     if (!user?.isTwoFactorEnabled) {
@@ -118,6 +120,8 @@ const Settings = () => {
       setTwoFactorLoading(false)
       if (result.success) {
         setTwoFactorSetup(result.data)
+      } else {
+        setTwoFactorError(result.error || 'Unable to generate QR code. Please log in again.')
       }
     }
   }
@@ -134,6 +138,9 @@ const Settings = () => {
       setTwoFactorModal(false)
       setTwoFactorSetup(null)
       setTwoFactorCode('')
+      setTwoFactorError('')
+    } else {
+      setTwoFactorError(result.error || 'Unable to verify 2FA code.')
     }
   }
 
@@ -369,6 +376,18 @@ const Settings = () => {
                     <p className="text-xs text-white/40 mb-1">Manual setup key</p>
                     <p className="break-all font-mono text-sm text-white/80">{twoFactorSetup.secret}</p>
                   </div>
+                </div>
+              )}
+
+              {twoFactorError && (
+                <div className="mb-5 rounded-xl border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-300">
+                  {twoFactorError}
+                </div>
+              )}
+
+              {!user?.isTwoFactorEnabled && twoFactorLoading && !twoFactorSetup && (
+                <div className="mb-5 rounded-xl bg-white/5 p-4 text-sm text-white/50">
+                  Generating authenticator QR code...
                 </div>
               )}
 

@@ -56,6 +56,7 @@ class AuthController {
         new ApiResponse(200, {
           user: user.toPublicJSON(),
           isAuthenticated: true,
+          accessToken: generateAccessToken(user._id, user.email, user.role),
         })
       );
     } catch (error) {
