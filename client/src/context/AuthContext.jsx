@@ -3,6 +3,17 @@ import axios from 'axios'
 import toast from 'react-hot-toast'
 
 const AuthContext = createContext()
+const ACCESS_TOKEN_KEY = 'authlab_access_token'
+
+const setAuthHeader = (token) => {
+  if (token) {
+    axios.defaults.headers.common.Authorization = `Bearer ${token}`
+    localStorage.setItem(ACCESS_TOKEN_KEY, token)
+  } else {
+    delete axios.defaults.headers.common.Authorization
+    localStorage.removeItem(ACCESS_TOKEN_KEY)
+  }
+}
 
 export const useAuth = () => {
   const context = useContext(AuthContext)
@@ -21,6 +32,7 @@ export const AuthProvider = ({ children }) => {
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1'
 
   useEffect(() => {
+    setAuthHeader(localStorage.getItem(ACCESS_TOKEN_KEY))
     checkAuth()
   }, [])
 
@@ -49,6 +61,9 @@ export const AuthProvider = ({ children }) => {
         return { success: true, requires2FA: true, data: response.data.data }
       }
       if (response.data?.data?.user) {
+        if (response.data.data.accessToken) {
+          setAuthHeader(response.data.data.accessToken)
+        }
         setUser(response.data.data.user)
         setIsAuthenticated(true)
         toast.success('Welcome back!')
@@ -69,6 +84,9 @@ export const AuthProvider = ({ children }) => {
         tempAccessToken,
       })
       if (response.data?.data?.user) {
+        if (response.data.data.accessToken) {
+          setAuthHeader(response.data.data.accessToken)
+        }
         setUser(response.data.data.user)
         setIsAuthenticated(true)
         toast.success('2FA verified')
@@ -85,11 +103,15 @@ export const AuthProvider = ({ children }) => {
   const logout = async () => {
     try {
       await axios.post(`${API_URL}/auth/logout`)
+      setAuthHeader(null)
       setUser(null)
       setIsAuthenticated(false)
       toast.success('Logged out successfully')
       return { success: true }
     } catch (error) {
+      setAuthHeader(null)
+      setUser(null)
+      setIsAuthenticated(false)
       toast.error('Logout failed')
       return { success: false, error: 'Logout failed' }
     }

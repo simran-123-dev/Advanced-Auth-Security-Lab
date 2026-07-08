@@ -23,7 +23,9 @@ class AuthController {
    * @route GET /api/v1/auth/check
    */
   checkAuth = asyncHandler(async (req, res) => {
-    const token = req.cookies?.accessToken;
+    const token =
+      req.cookies?.accessToken ||
+      req.headers.authorization?.replace("Bearer ", "");
 
     if (!token) {
       return res.status(200).json(
