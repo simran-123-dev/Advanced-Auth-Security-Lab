@@ -60,52 +60,6 @@
 ✅ Responsive Design
 
 ---
-
-# ✨ Project Preview
-
-## Landing Page
-
-> Beautiful Enterprise Landing Page with animations.
-
-(Add Screenshot)
-
----
-
-## Authentication
-
-- Register
-- Login
-- Google OAuth
-- GitHub OAuth
-
-(Add Screenshot)
-
----
-
-## Email Verification
-
-Secure Email Verification Flow.
-
-(Add Screenshot)
-
----
-
-## Forgot Password
-
-Password Reset through Email.
-
-(Add Screenshot)
-
----
-
-## Dashboard
-
-Protected Dashboard with User Profile.
-
-(Add Screenshot)
-
----
-
 # 🛠 Tech Stack
 
 ## Frontend
