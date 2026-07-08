@@ -124,9 +124,9 @@ class AuthController {
       new ApiResponse(201, {
         user: userResponse,
         emailSent,
-        verificationLink: emailSent ? undefined : verificationLink,
+        verificationLink,
         message: emailSent
-          ? "User registered successfully. Please verify your email."
+          ? "User registered successfully. Verification email has been requested."
           : "User registered successfully, but verification email could not be sent.",
       }),
     );

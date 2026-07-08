@@ -128,7 +128,7 @@ export const AuthProvider = ({ children }) => {
       if (response.data?.data?.emailSent === false) {
         toast.success('Account created. Email service is unavailable right now.')
       } else {
-        toast.success('Account created! Please verify your email.')
+        toast.success('Account created. Check inbox or use the demo verification link.')
       }
       return { success: true, data: response.data.data }
     } catch (error) {

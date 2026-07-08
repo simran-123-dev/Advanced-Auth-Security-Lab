@@ -48,6 +48,7 @@ const Register = () => {
   const navigate = useNavigate();
   const { register: registerUser } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [registrationResult, setRegistrationResult] = useState(null);
 
   const {
     register,
@@ -74,7 +75,7 @@ const Register = () => {
     });
     setLoading(false);
     if (result.success) {
-      navigate("/login");
+      setRegistrationResult(result.data);
     }
   };
 
@@ -235,6 +236,32 @@ const Register = () => {
             </div>
 
             {/* Form */}
+            {registrationResult ? (
+              <div className="space-y-4">
+                <div className="rounded-xl border border-primary-500/20 bg-primary-500/10 p-4">
+                  <h2 className="font-semibold text-primary-300">Account created</h2>
+                  <p className="mt-1 text-sm text-white/50">
+                    {registrationResult.emailSent === false
+                      ? 'Email delivery is unavailable right now. Use the demo verification link below.'
+                      : 'Verification email was requested. If it does not arrive, use the demo verification link below.'}
+                  </p>
+                </div>
+
+                {registrationResult.verificationLink && (
+                  <a
+                    href={registrationResult.verificationLink}
+                    className="block rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 p-4 text-sm text-primary-300 transition-colors break-all"
+                  >
+                    Verify account now
+                  </a>
+                )}
+
+                <AuthButton type="button" onClick={() => navigate('/login')}>
+                  Go to Login
+                  <ArrowRight size={18} className="ml-2 inline" />
+                </AuthButton>
+              </div>
+            ) : (
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-3.5">
               <AuthInput
                 label="Full Name"
@@ -293,6 +320,7 @@ const Register = () => {
                 <ArrowRight size={18} className="ml-2 inline" />
               </AuthButton>
             </form>
+            )}
 
             {/* Footer */}
             <motion.p
